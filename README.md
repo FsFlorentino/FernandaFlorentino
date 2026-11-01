@@ -1,56 +1,61 @@
-
-# 👩‍💻 Fernanda Florentino
-## Desenvolvedora Front-end
-Olá, tenho 35 anos e sou do Rio de Janeiro. Atualmente estou fazendo transição de carreira e atuo profissionalmente como Administradora. Minha paixão por tecnologia me impulsiona a aprender constantemente, explorar novas ferramentas e evoluir como desenvolvedora. 🚀
-Estou focada em me especializar no desenvolvimento front-end, com ênfase em React, buscando criar interfaces modernas, acessíveis e com ótima experiência para o usuário.
-<br>
-
-<img 
-    align="left" 
-    alt="HTML"
-    title="HTML" 
-    width="30px" 
-    style="padding-right: 10px;" 
-    src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/html5/html5-original.svg" 
-/>
-<img 
-    align="left" 
-    alt="CSS" 
-    title="CSS"
-    width="30px" 
-    style="padding-right: 10px;" 
-    src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/css3/css3-original.svg" 
-/>
-<img 
-    align="left" 
-    alt="JavaScript" 
-    title="JavaScript"
-    width="30px" 
-    style="padding-right: 10px;" 
-    src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/javascript/javascript-original.svg" 
-/>
-<img 
-    align="left" 
-    alt="React"
-    title="React" 
-    width="30px" 
-    style="padding-right: 10px;" 
-    src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/react/react-original.svg" 
-/>
-
+<div align="center">
 
 <br>
 
-# 🛠️ Tecnologias e Ferramentas
-Atualmente trabalho e estudo com:
-- HTML
-- CSS
-- JavaScript
-- Git
-- React
+# Fernanda Florentino
 
+**JavaScript · TypeScript · React · Node**
 
+Desenvolvedora em formação · Rio de Janeiro
 
-# 📫 Contato
-✉️ Email: fsfernandasantos20@gmail.com <br>
-💼 LinkedIn: linkedin.com/in/fernanda-santos-7aab54121?
+<br>
+
+<img src="https://skillicons.dev/icons?i=js,ts,react,nodejs,html,css,git" alt="JavaScript, TypeScript, React, Node.js, HTML, CSS e Git" />
+
+</div>
+
+<br>
+
+---
+
+<br>
+
+Em transição de carreira — da administração para o desenvolvimento. Aprendo todos os dias e construo com **TypeScript** nos dois lados da stack: **React** para interfaces e **Node** para o servidor.
+
+O objetivo é simples: código claro, interfaces cuidadas e uma experiência que respeita quem usa.
+
+<br>
+
+```ts
+const fernanda = {
+  from: "Rio de Janeiro",
+  path: "carreira em transição",
+  language: "TypeScript",
+  frontend: "React",
+  backend: "Node.js",
+  seeking: "clareza, consistência e boa experiência",
+};
+```
+
+<br>
+
+<div align="center">
+
+### stack
+
+`TypeScript` &nbsp;·&nbsp; `JavaScript` &nbsp;·&nbsp; `React` &nbsp;·&nbsp; `Node.js` &nbsp;·&nbsp; `HTML` &nbsp;·&nbsp; `CSS` &nbsp;·&nbsp; `Git`
+
+<br>
+
+### contato
+
+[e-mail](mailto:fsfernandasantos20@gmail.com)
+&nbsp;·&nbsp;
+[linkedin](https://www.linkedin.com/in/fernanda-santos-7aab54121)
+
+<br>
+<br>
+
+<sub>sempre em construção.</sub>
+
+</div>
