@@ -3,7 +3,7 @@ const assert = require("node:assert/strict");
 const logic = require("./logic.js");
 
 function person(id, name) {
-  return { id, name, phone: "5511988887777" };
+  return { id, name };
 }
 
 function assertSecretSanta(people, assignments) {
@@ -31,21 +31,6 @@ function assertSecretSanta(people, assignments) {
     assert.notEqual(next.get(receiver), giver);
   }
 }
-
-test("normaliza celular brasileiro com DDD", () => {
-  assert.equal(logic.normalizePhone("(11) 98888-7777"), "5511988887777");
-  assert.equal(logic.normalizePhone("11988887777"), "5511988887777");
-  assert.equal(logic.normalizePhone("+55 11 98888-7777"), "5511988887777");
-  assert.equal(logic.normalizePhone("011988887777"), "5511988887777");
-  assert.equal(logic.formatPhone("5511988887777"), "(11) 98888-7777");
-});
-
-test("recusa número sem DDD, fixo ou incompleto", () => {
-  assert.equal(logic.normalizePhone("988887777"), null);
-  assert.equal(logic.normalizePhone("1133334444"), null);
-  assert.equal(logic.normalizePhone("abc"), null);
-  assert.equal(logic.normalizePhone(""), null);
-});
 
 test("sorteio não deixa ninguém tirar a si mesmo nem formar dupla", () => {
   const people = [
@@ -82,16 +67,14 @@ test("o link esconde o nome e a mensagem não entrega o resultado", () => {
   assert.equal(token.includes("João"), false);
 
   const link = `https://amigo.example/#/v/${token}`;
-  const whatsApp = logic.buildWhatsAppUrl({
-    phone: "5511988887777",
+  const text = logic.buildMessage({
     giverName: "João",
     eventName: "Natal da família",
     revealUrl: link,
   });
-  const text = new URL(whatsApp).searchParams.get("text").replace(link, "");
 
-  assert.match(whatsApp, /^https:\/\/wa\.me\/5511988887777\?text=/);
-  assert.equal(text.includes("Conceição"), false);
+  assert.equal(text.includes(link), true);
+  assert.equal(text.replace(link, "").includes("Conceição"), false);
   assert.equal(text.includes("João"), true);
   assert.equal(logic.decodeResult(`${token}x`), null);
   assert.equal(logic.decodeResult(""), null);

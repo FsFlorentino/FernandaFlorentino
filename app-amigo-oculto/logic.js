@@ -16,36 +16,6 @@
     return String(value ?? "").trim().replace(/\s+/g, " ");
   }
 
-  function normalizePhone(input) {
-    let digits = String(input ?? "").replace(/\D/g, "").replace(/^0+/, "");
-    let canonical = null;
-
-    if ((digits.length === 12 || digits.length === 13) && digits.startsWith("55")) {
-      canonical = digits;
-    } else if (digits.length === 10 || digits.length === 11) {
-      canonical = `55${digits}`;
-    }
-
-    if (!canonical) return null;
-
-    const local = canonical.slice(2);
-    // Celular brasileiro: DDD + 9 dígitos, e o primeiro deles é 9.
-    if (local.length !== 11 || local[2] !== "9") return null;
-    return canonical;
-  }
-
-  function formatPhone(phone) {
-    const digits = String(phone ?? "");
-    const local = digits.startsWith("55") ? digits.slice(2) : digits;
-    if (local.length === 11) {
-      return `(${local.slice(0, 2)}) ${local.slice(2, 7)}-${local.slice(7)}`;
-    }
-    if (local.length === 10) {
-      return `(${local.slice(0, 2)}) ${local.slice(2, 6)}-${local.slice(6)}`;
-    }
-    return digits ? `+${digits}` : "";
-  }
-
   function createId() {
     const bytes = new Uint8Array(8);
     crypto.getRandomValues(bytes);
@@ -182,11 +152,6 @@
     ].join("\n");
   }
 
-  function buildWhatsAppUrl({ phone, giverName, eventName, revealUrl }) {
-    const message = buildMessage({ giverName, eventName, revealUrl });
-    return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-  }
-
   function parseHash(hash) {
     const match = /^#\/v\/([A-Za-z0-9_-]+)$/.exec(hash || "");
     if (!match) return { type: "home" };
@@ -202,14 +167,11 @@
 
   return {
     cleanName,
-    normalizePhone,
-    formatPhone,
     createId,
     draw,
     encodeResult,
     decodeResult,
     buildMessage,
-    buildWhatsAppUrl,
     parseHash,
     revealUrl,
   };

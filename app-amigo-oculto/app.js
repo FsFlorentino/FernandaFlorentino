@@ -5,7 +5,7 @@
   const STORAGE_KEY = "amigo-oculto-v1";
   const app = document.querySelector("#app");
 
-  const draft = { name: "", phone: "" };
+  const draft = { name: "" };
   let editingId = null;
   let formError = "";
   let state = loadState();
@@ -15,12 +15,7 @@
   }
 
   function validPerson(person) {
-    return Boolean(
-      person &&
-        typeof person.id === "string" &&
-        typeof person.name === "string" &&
-        typeof person.phone === "string"
-    );
+    return Boolean(person && typeof person.id === "string" && typeof person.name === "string");
   }
 
   function validAssignment(row) {
@@ -125,10 +120,8 @@
   function captureDraft() {
     const eventInput = document.querySelector("#event-name");
     const nameInput = document.querySelector("#person-name");
-    const phoneInput = document.querySelector("#person-phone");
     if (eventInput) state.eventName = eventInput.value;
     if (nameInput) draft.name = nameInput.value;
-    if (phoneInput) draft.phone = phoneInput.value;
   }
 
   function toast(message) {
@@ -173,7 +166,6 @@
   function submitPerson(event) {
     event.preventDefault();
     const name = AmigoOculto.cleanName(draft.name);
-    const phone = AmigoOculto.normalizePhone(draft.phone);
 
     if (!name) {
       formError = "Escreva o nome.";
@@ -181,10 +173,6 @@
       formError = "Use um nome de até 40 letras.";
     } else if (state.people.some((person) => person.id !== editingId && sameName(person.name, name))) {
       formError = "Esse nome já está na lista.";
-    } else if (!phone) {
-      formError = "Informe um celular com DDD. Ex.: 11 98888-7777";
-    } else if (state.people.some((person) => person.id !== editingId && person.phone === phone)) {
-      formError = "Esse WhatsApp já está na lista.";
     } else if (editingId) {
       const person = findPerson(editingId);
       if (!person) {
@@ -192,32 +180,27 @@
         formError = "Não encontrei essa pessoa. Adicione de novo.";
       } else {
         person.name = name;
-        person.phone = phone;
         editingId = null;
         draft.name = "";
-        draft.phone = "";
         formError = "";
         saveState();
         toast(`${name} foi atualizado.`);
       }
     } else {
-      state.people.push({ id: AmigoOculto.createId(), name, phone });
+      state.people.push({ id: AmigoOculto.createId(), name });
       draft.name = "";
-      draft.phone = "";
       formError = "";
       saveState();
       toast(`${name} entrou na lista.`);
     }
 
-    const focusPhone = formError.startsWith("Informe") || formError.startsWith("Esse WhatsApp");
     renderHome({ preserveDraft: true });
-    document.querySelector(focusPhone ? "#person-phone" : "#person-name")?.focus();
+    document.querySelector("#person-name")?.focus();
   }
 
   function startEdit(person) {
     editingId = person.id;
     draft.name = person.name;
-    draft.phone = AmigoOculto.formatPhone(person.phone);
     formError = "";
     renderHome({ preserveDraft: true });
     document.querySelector("#person-name")?.focus();
@@ -226,7 +209,6 @@
   function cancelEdit() {
     editingId = null;
     draft.name = "";
-    draft.phone = "";
     formError = "";
     renderHome({ preserveDraft: true });
   }
@@ -236,7 +218,6 @@
     if (editingId === person.id) {
       editingId = null;
       draft.name = "";
-      draft.phone = "";
       formError = "";
     }
     saveState();
@@ -268,7 +249,10 @@
         const giver = findPerson(pair.giverId);
         const receiver = findPerson(pair.receiverId);
         return {
-          ...pair,
+          giverId: pair.giverId,
+          receiverId: pair.receiverId,
+          giverName: giver.name,
+          receiverName: receiver.name,
           sent: false,
           token: AmigoOculto.encodeResult({
             eventName,
@@ -299,15 +283,24 @@
   }
 
   function clearAll() {
-    const confirmed = window.confirm("Apagar a lista e começar outro sorteio?");
+    const confirmed = window.confirm("Resetar? Os nomes e o sorteio salvos neste navegador serão apagados.");
     if (!confirmed) return;
     state = emptyState();
     editingId = null;
     draft.name = "";
-    draft.phone = "";
     formError = "";
     saveState();
     renderHome({ scrollTop: true, preserveDraft: true });
+  }
+
+  function resetButton() {
+    if (!state.people.length && !state.eventName && !state.assignments) return null;
+    return el("button", {
+      class: "btn btn-reset",
+      type: "button",
+      text: "Reset",
+      onClick: clearAll,
+    });
   }
 
   function markSent(giverId, sent) {
@@ -318,25 +311,33 @@
     renderHome();
   }
 
-  async function copyLink(token) {
-    const link = AmigoOculto.revealUrl(token);
+  function messageFor(row) {
+    return AmigoOculto.buildMessage({
+      giverName: row.giverName,
+      eventName: state.eventName,
+      revealUrl: AmigoOculto.revealUrl(row.token),
+    });
+  }
+
+  async function copyMessage(row) {
+    const message = messageFor(row);
     try {
-      await navigator.clipboard.writeText(link);
-      toast("Link copiado.");
+      await navigator.clipboard.writeText(message);
+      toast(`Texto de ${row.giverName} copiado.`);
     } catch (error) {
-      window.prompt("Copie o link:", link);
+      window.prompt("Copie o texto:", message);
     }
   }
 
   function hostingNote() {
     if (!needsPublicHost()) {
-      return el("aside", { class: "note" }, el("strong", { text: "Links prontos para o celular" }), el("p", { text: "Cada WhatsApp abre com a mensagem pronta. A pessoa toca no link e vê só o próprio resultado." }));
+      return el("aside", { class: "note" }, el("strong", { text: "Texto pronto para encaminhar" }), el("p", { text: "Copie o texto de cada pessoa e cole na conversa. O link mostra só o resultado dela." }));
     }
     return el(
       "aside",
       { class: "note" },
       el("strong", { text: "Para o link abrir no celular" }),
-      el("p", {}, "Neste computador o sorteio funciona para testar. Para enviar às pessoas, publique a pasta de graça no ", el("a", { href: "https://app.netlify.com/drop", target: "_blank", rel: "noopener noreferrer", text: "Netlify Drop" }), " e faça o sorteio no endereço publicado.")
+      el("p", {}, "Neste computador dá para testar. Para o link abrir no celular, publique a pasta de graça no ", el("a", { href: "https://app.netlify.com/drop", target: "_blank", rel: "noopener noreferrer", text: "Netlify Drop" }), " e copie o texto no endereço publicado.")
     );
   }
 
@@ -346,9 +347,9 @@
       { class: "help" },
       el("summary", { text: "Como funciona" }),
       el("ol", {}, [
-        el("li", { text: "Cadastre pelo menos 3 pessoas, com nome e celular." }),
+        el("li", { text: "Cadastre pelo menos 3 nomes." }),
         el("li", { text: "Sorteie. Ninguém tira o próprio nome, nem fecha uma dupla em que as duas pessoas se tiram." }),
-        el("li", { text: "Toque em Enviar no WhatsApp. A mensagem já vai pronta — confirme o envio no aplicativo. Isso não tem custo." }),
+        el("li", { text: "Copie o texto de cada pessoa e encaminhe você mesma. O texto já traz o link." }),
         el("li", { text: "A pessoa abre o link, toca em Revelar e vê somente quem ela tirou." }),
       ]),
       el("p", {
@@ -362,29 +363,17 @@
     return el(
       "form",
       { novalidate: "true", onSubmit: submitPerson },
-      el("div", { class: "row" }, [
-        el("label", { class: "field" }, el("span", { text: "Nome" }), el("input", {
-          id: "person-name",
-          name: "name",
-          type: "text",
-          maxlength: "40",
-          autocomplete: "name",
-          spellcheck: "false",
-          placeholder: "Ex.: Ana Souza",
-          value: draft.name,
-          onInput: onDraftInput,
-        })),
-        el("label", { class: "field" }, el("span", { text: "WhatsApp" }), el("input", {
-          id: "person-phone",
-          name: "phone",
-          type: "tel",
-          inputmode: "tel",
-          autocomplete: "tel",
-          placeholder: "11 98888-7777",
-          value: draft.phone,
-          onInput: onDraftInput,
-        })),
-      ]),
+      el("label", { class: "field" }, el("span", { text: "Nome" }), el("input", {
+        id: "person-name",
+        name: "name",
+        type: "text",
+        maxlength: "40",
+        autocomplete: "name",
+        spellcheck: "false",
+        placeholder: "Ex.: Ana Souza",
+        value: draft.name,
+        onInput: onDraftInput,
+      })),
       formError ? el("p", { id: "form-error", class: "error", role: "alert", text: formError }) : null,
       el("div", { class: editingId ? "actions pair" : "actions" }, [
         el("button", { class: "btn btn-primary", type: "submit", text: editingId ? "Salvar" : "Adicionar" }),
@@ -403,10 +392,7 @@
       state.people.map((person) =>
         el("li", { class: "person-row" }, [
           avatar(person.name),
-          el("div", { class: "who" }, [
-            el("strong", { text: person.name }),
-            el("span", { text: AmigoOculto.formatPhone(person.phone) }),
-          ]),
+          el("div", { class: "who" }, el("strong", { text: person.name })),
           el("button", {
             class: "icon-btn",
             type: "button",
@@ -452,132 +438,83 @@
         text: ready ? "Sortear" : 3 - state.people.length === 1 ? "Falta 1 pessoa" : `Faltam ${3 - state.people.length} pessoas`,
         onClick: startDraw,
       }),
-      state.people.length
-        ? el("button", { class: "btn btn-ghost", type: "button", text: "Limpar lista", onClick: clearAll })
-        : null,
+      resetButton(),
       helpBlock(),
     ]);
   }
 
   function resultViews() {
-    return (state.assignments || []).map((row) => ({
-      ...row,
-      giver: findPerson(row.giverId),
-      receiver: findPerson(row.receiverId),
-    }));
+    return (state.assignments || []).map((row) => {
+      const giver = findPerson(row.giverId);
+      const receiver = findPerson(row.receiverId);
+      return {
+        ...row,
+        giverName: row.giverName || giver?.name || "",
+        receiverName: row.receiverName || receiver?.name || "",
+      };
+    });
   }
 
-  function sendCard(row, isNext) {
-    const link = AmigoOculto.revealUrl(row.token);
-    const message = AmigoOculto.buildMessage({
-      giverName: row.giver.name,
-      eventName: state.eventName,
-      revealUrl: link,
-    });
-    const href = AmigoOculto.buildWhatsAppUrl({
-      phone: row.giver.phone,
-      giverName: row.giver.name,
-      eventName: state.eventName,
-      revealUrl: link,
-    });
-
-    return el("article", { class: isNext ? "person-card is-next" : "person-card" }, [
+  function sendCard(row) {
+    return el("article", { class: "person-card" }, [
       el("div", { class: "person-head" }, [
-        avatar(row.giver.name),
-        el("div", { class: "who" }, [
-          el("strong", { text: row.giver.name }),
-          el("span", { text: AmigoOculto.formatPhone(row.giver.phone) }),
-        ]),
+        avatar(row.giverName),
+        el("div", { class: "who" }, el("strong", { text: row.giverName })),
         el("span", {
           class: row.sent ? "badge is-sent" : "badge",
           text: row.sent ? "Enviado" : "Pendente",
         }),
       ]),
-      isNext ? el("p", { class: "hint", text: "Próximo envio. O WhatsApp abre com a mensagem pronta." }) : null,
-      el("div", { class: "actions" }, [
-        el("a", {
-          class: "btn btn-primary wide",
-          href,
-          target: "_blank",
-          rel: "noopener noreferrer",
-          text: "Enviar no WhatsApp",
-          "aria-label": `Enviar no WhatsApp para ${row.giver.name}`,
+      el("pre", { class: "message", text: messageFor(row) }),
+      el("div", { class: "actions pair" }, [
+        el("button", {
+          class: "btn btn-primary",
+          type: "button",
+          text: "Copiar texto",
+          onClick: () => copyMessage(row),
         }),
-        el("div", { class: "actions pair" }, [
-          el("button", {
-            class: "btn btn-secondary",
-            type: "button",
-            text: "Copiar link",
-            onClick: () => copyLink(row.token),
-          }),
-          el("button", {
-            class: "btn btn-secondary",
-            type: "button",
-            text: row.sent ? "Desmarcar" : "Já enviei",
-            onClick: () => markSent(row.giverId, !row.sent),
-          }),
-        ]),
+        el("button", {
+          class: "btn btn-secondary",
+          type: "button",
+          text: row.sent ? "Desmarcar" : "Já enviei",
+          onClick: () => markSent(row.giverId, !row.sent),
+        }),
       ]),
-      el("details", {}, el("summary", { text: "Ver mensagem" }), el("pre", { class: "message", text: message })),
     ]);
-  }
-
-  function pairsBlock(rows) {
-    return el(
-      "details",
-      { class: "help" },
-      el("summary", { text: "Ver resultado completo" }),
-      el("p", {
-        class: "help-copy",
-        text: "Isto aparece só neste aparelho. Use se precisar conferir um envio.",
-      }),
-      el(
-        "ul",
-        { class: "pairs" },
-        rows.map((row) =>
-          el("li", { class: "pair-row" }, [
-            el("strong", { text: row.giver.name }),
-            el("span", { text: "tirou" }),
-            el("strong", { text: row.receiver.name }),
-          ])
-        )
-      )
-    );
   }
 
   function resultCard() {
     const rows = resultViews();
-    if (rows.some((row) => !row.giver || !row.receiver)) {
+    if (rows.some((row) => !row.giverName || !row.receiverName)) {
       return el("section", { class: "card stack" }, [
         el("h2", { class: "section-label", text: "Não encontrei alguém deste sorteio" }),
         el("button", { class: "btn btn-primary", type: "button", text: "Desfazer sorteio", onClick: undoDraw }),
+        resetButton(),
       ]);
     }
 
     const sentCount = rows.filter((row) => row.sent).length;
-    const nextId = rows.find((row) => !row.sent)?.giverId;
     const when = state.drawnAt
       ? new Intl.DateTimeFormat("pt-BR", { dateStyle: "long", timeStyle: "short" }).format(state.drawnAt)
       : "";
 
     return el("section", { class: "card stack" }, [
-      el("div", {}, [
-        el("h2", { class: "section-label", text: "Sorteio pronto" }),
-        el("p", {
-          class: "status-line",
-          text: `${sentCount} de ${rows.length} marcados como enviados.${when ? ` Sorteado em ${when}.` : ""}`,
-        }),
+      el("div", { class: "section-head" }, [
+        el("div", {}, [
+          el("h2", { class: "section-label", text: "Sorteio pronto" }),
+          el("p", {
+            class: "status-line",
+            text: `${sentCount} de ${rows.length} marcados como enviados.${when ? ` Sorteado em ${when}.` : ""}`,
+          }),
+        ]),
+        resetButton(),
       ]),
       el("p", {
         class: "hint",
-        text: "O nome sorteado não aparece aqui. Ele só abre no link de cada pessoa. Se sortear de novo, os links antigos continuam com o resultado antigo.",
+        text: "Copie o texto e encaminhe para a pessoa. O nome sorteado só abre no link. Se sortear de novo, um link antigo continua com o resultado antigo.",
       }),
-      rows.map((row) => sendCard(row, row.giverId === nextId)),
-      pairsBlock(rows),
-      el("div", { class: "actions pair" }, [
-        el("button", { class: "btn btn-secondary", type: "button", text: "Desfazer sorteio", onClick: undoDraw }),
-        el("button", { class: "btn btn-ghost", type: "button", text: "Novo sorteio", onClick: clearAll }),
-      ]),
+      rows.map((row) => sendCard(row)),
+      el("button", { class: "btn btn-secondary", type: "button", text: "Desfazer sorteio", onClick: undoDraw }),
       helpBlock(),
     ]);
   }
@@ -603,14 +540,14 @@
           el("h1", { text: "Amigo Oculto" }),
           el("p", {
             class: "lede",
-            text: "Cadastre nome e WhatsApp, sorteie e mande um link secreto para cada pessoa.",
+            text: "Cadastre os nomes, sorteie e copie um texto com o link secreto de cada pessoa.",
           }),
         ]),
         hostingNote(),
         state.drawing ? drawingCard() : state.assignments ? resultCard() : setupCard(),
         el("p", {
           class: "footer",
-          text: "A lista fica salva neste navegador. Os links continuam válidos mesmo se você limpar esta página.",
+          text: "A lista fica salva neste navegador.",
         }),
       ]))
     );
